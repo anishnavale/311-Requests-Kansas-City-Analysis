@@ -1,0 +1,242 @@
+// Create Case node
+create constraint for (case:Case) require case.Case_ID is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+call {
+with row
+merge (case:Case {Case_ID : toInteger(row.CASE_ID)})
+on create set case.Case_ID = toInteger(row.CASE_ID)
+on create set case.Case_URL = row.CASE_URL
+on create set case.Source = row.SOURCE
+on create set case.Parcel_ID = toInteger(row.PARCEL_ID_NO)
+on create set case.Creation_DT = datetime(replace(row.CREATION_DATETIME,' ','T'))
+on create set case.Closed_DT = date(row.CLOSED_DATE)
+} in transactions of 10000 rows;
+
+// Create Department node
+create constraint for (department:Department) require department.Work_Group is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+call {
+with row
+merge (department:Department {Work_Group : row.WORK_GROUP})
+on create set department.Work_Group = row.WORK_GROUP
+on create set department.Department_Type = row.DEPARTMENT} in transactions of 10000 rows;
+
+// Create Category node
+create constraint for (category : Category) require category.Category_Type is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (category:Category {Category_Type : row.CATEGORY})
+on create set category.Category_Type = row.CATEGORY
+} in transactions of 10000 rows;
+
+// Create Request node
+create constraint for (request: Request) require request.Request_Type is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (request:Request {Request_Type : row.TYPE})
+on create set request.Request_Type = row.TYPE
+on create set request.Detail = row.DETAIL
+on create set request.Request_Overview = row.REQUEST_TYPE
+} in transactions of 10000 rows;
+
+// Create Status node
+create constraint for (status: Status) require status.Status_Type is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+call {
+with row
+merge (status:Status {Status_Type : row.STATUS})
+on create set status.Status_Type = row.STATUS
+} in transactions of 10000 rows;
+
+// Create Timeframe node
+create constraint for (timeframe:Timeframe) require timeframe.EXCEEDED_EST_TIMEFRAME is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+call {
+with row
+merge (timeframe:Timeframe {Day_Range_Window : row.EXCEEDED_EST_TIMEFRAME})
+on create set timeframe.Exceeded_Estimate_Time = row.EXCEEDED_EST_TIMEFRAME
+} in transactions of 10000 rows;
+
+// Create Year node using creation year
+create constraint for (year:Year) require year.Date_Year is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (year:Year {Date_Year : toInteger(row.CREATION_YEAR)})
+on create set year.Date_Year = toInteger(row.CREATION_YEAR)
+} in transactions of 10000 rows;
+
+// Create Year node using closed year
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (year:Year {Date_Year : toInteger(row.CLOSED_YEAR)})
+on create set year.Date_Year = toInteger(row.CLOSED_YEAR)
+} in transactions of 10000 rows;
+
+// Create Month node using closed month
+create constraint for (month:Month) require month.Date_Month is unique;
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (month:Month {Date_Month : row.CLOSED_MONTH})
+on create set month.Date_Month = row.CLOSED_MONTH
+} in transactions of 10000 rows;
+
+// Create Month node using creation month
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+Call {
+with row
+merge (month:Month {Date_Month : row.CREATION_MONTH})
+on create set month.Date_Month = row.CREATION_MONTH
+} in transactions of 10000 rows;
+
+// Create Council_District node 
+create constraint for (councildistrict : Council_District) require councildistrict.Council_District_Number is unique; 
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row 
+call { 
+    with row 
+merge (councildistrict:Council_District {Council_District_Number : row.COUNCIL_DISTRICT}) 
+on create set councildistrict.Council_District_Name = row.COUNCIL_DISTRICT
+} in transactions of 10000 rows;
+
+// Create Police_District node 
+create constraint for (policedistrict: Police_District) require policedistrict.Police_District_Type is unique; 
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row 
+call { 
+    with row
+merge (policedistrict:Police_District {Police_District_Type : row.POLICE_DISTRICT}) 
+on create set policedistrict.Police_District_Type = row.POLICE_DISTRICT
+} in transactions of 10000 rows;
+
+// Create Zipcode node 
+create constraint for (zipcode: Zipcode) require zipcode.Zip_Code is unique; 
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row 
+call { 
+    with row 
+merge (zipcode:Zipcode {Zip_Code : row.ZIP_CODE}) 
+on create set zipcode.Zip_Code = row.ZIP_CODE
+} in transactions of 10000 rows;
+
+// Create Neighborhood node 
+create constraint for (neighborhood: Neighborhood) require neighborhood.Neighborhood_Name is unique; 
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row 
+Call { 
+    with row 
+merge (neighborhood:Neighborhood {Neighborhood_Name : row.NEIGHBORHOOD}) 
+on create set neighborhood.Neighborhood_Name = row.NEIGHBORHOOD
+} in transactions of 10000 rows;
+
+// Create County node 
+create constraint for (county : County) require county.County_Name is unique; 
+:auto load csv with headers from 'file:///311_Cleaned_Data.csv' as row 
+Call { 
+    with row 
+merge (county:County {County_Name : row.COUNTY}) 
+on create set county.County_Name = row.COUNTY
+} in transactions of 10000 rows;
+
+//Loading Relationships Now
+
+// Load belong_to Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Department {Work_Group : row.WORK_GROUP})
+merge (c) -[:belong_to]-> (d);
+
+// Load is_about Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Category {Category_Type : row.CATEGORY})
+merge (c) -[:is_about]-> (d);
+
+// Load related_to Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Request {Request_Type : row.TYPE})
+merge (c) -[:related_to]-> (d);
+
+// Load is_affiliated_with Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Category {Category_Type : row.CATEGORY})
+match (d:Request {Request_Type : row.TYPE})
+merge (d) -[:is_affiliated_with]-> (c);
+
+// Load condition_is Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Status {Status_Type : row.STATUS})
+merge (c) -[:condition_is]-> (d);
+
+// Load estimated_as Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Timeframe {Exceeded_Estimate_Time : row.EXCEEDED_EST_TIMEFRAME})
+merge (c) -[r:estimated_as]-> (d)
+on create set r.Days_To_Close = toInteger(row.DAYS_TO_CLOSE)
+on create set r.Day_Range_Window = toInteger(row.`30-60-90_Days_Open_Window`);
+
+// Load created_on Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Year {Date_Year : toInteger(row.CREATION_YEAR)})
+merge (c) -[:created_year]-> (d);
+
+// Load closed_on Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Year {Date_Year : toInteger(row.CLOSED_YEAR)})
+merge (c) -[:closed_year]-> (d);
+
+// Load closed_on Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Month {Date_Month : row.CLOSED_MONTH})
+merge (c) -[:closed_month]-> (d);
+
+// Load created_on Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Month {Date_Month : row.CREATION_MONTH})
+merge (c) -[:created_month]-> (d);
+
+// Load lies_under Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Council_District {Council_District_Name : row.COUNCIL_DISTRICT})
+merge (c) -[:lies_under]-> (d);
+
+// Load handled_under Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Police_District {Police_District_Type : row.POLICE_DISTRICT})
+merge (c) -[:handled_under]-> (d);
+
+// Load located_in Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Zipcode {Zip_Code : row.ZIP_CODE})
+merge (c) -[r:located_in]-> (d)
+on create set r.Street_Address = row.STREET_ADDRESS
+on create set r.Latitude = row.LATITUDE
+on create set r.Longitude = row.LONGITUDE;
+
+// Load happened_in Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:Neighborhood {Neighborhood_Name : row.NEIGHBORHOOD})
+merge (c) -[:happened_in]-> (d);
+
+// Load under_county from Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Case {Case_ID : toInteger(row.CASE_ID)})
+match (d:County {County_Name : row.COUNTY})
+merge (c) -[:under_county]-> (d);
+
+// Load lies_in_county Relationship
+load csv with headers from 'file:///311_Cleaned_Data.csv' as row
+match (c:Zipcode {Zip_Code : row.ZIP_CODE})
+match (d:County {County_Name : row.COUNTY})
+merge (c) -[:lies_in_county]-> (d);
